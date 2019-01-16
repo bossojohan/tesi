@@ -1,0 +1,57 @@
+import numpy as np
+from keras import models
+from keras import layers
+img_height =224
+img_width = 224
+img_channels=3
+#parametri
+cardinality=4
+nb_channels=16    
+class ResnetGenerator():  
+#valuta se i parametri sono da spostare all'interno della classe per far si che si possa richiamare da un altro .py
+    def __init__(self):
+        image_tensor = layers.Input(shape=(img_height, img_width, img_channels))
+        network_output = self.residual_network(image_tensor)  
+        self.model= models.Model(inputs=[image_tensor], outputs=[network_output])  
+        
+    
+    def residual_network(self,image_tensor):  
+        x = layers.Conv2D(nb_channels,kernel_size=(3,3),strides=(1,1),padding='same')(image_tensor)
+        x = self.add_common_layers(x)
+        x = layers.MaxPooling2D()(x)
+        x = self.residual_block(x)
+#in questo spazio posso inserire tutte le funzioni per creare la mia resnet
+        return x
+    def add_common_layers(self,y):
+        y=layers.BatchNormalization()(y)
+        y=layers.LeakyReLU()(y)
+        return y
+    
+    def residual_block(self,y):
+        shortcut = y
+        y= layers.Conv2D(nb_channels, kernel_size=(1, 1),strides=(1, 1), padding='same')(y)
+        y= self.add_common_layers(y)
+        y= self.grouped_layer(y)
+        y= layers.add([shortcut, y])
+        return y
+    def grouped_layer(self,y):
+        if cardinality== 1 :
+            return layers.Conv2D(nb_channels, kernel_size=(3,3), strides=(1,1), padding='same')(y)
+        _d= nb_channels// cardinality
+        
+        groups=[]
+        groups2=[]
+        for j in range(cardinality):
+            group = layers.Lambda(lambda z: z[:,:,:,j*_d:j*_d+_d])(y)
+            groups.append(layers.Conv2D(_d, kernel_size=(3,3),strides=(1,1), padding='same')(group))
+        groups2.append(layers.Conv2D(_d, kernel_size=(3,3),strides=(1,1), padding='same')(groups[0]))    
+        for j in range(cardinality-1):
+            group2 = layers.average([groups[j], groups[j+1]])
+            groups2.append(layers.Conv2D(_d, kernel_size=(3,3),strides=(1,1), padding='same')(group2))
+            
+        y= layers.concatenate(groups2)
+        
+        return y
+
+rm = ResnetGenerator()
+rm.model.summary()
