@@ -1,0 +1,97 @@
+import csv
+import random
+import glob
+import os
+import os.path
+import shutil
+import import_ipynb 
+from Frame_Extractor import check_already_exist
+def code_extractor(miodato):
+    codicea,game,t= miodato.split('_')
+    return(codicea)
+    
+def scelta(datoc,n):
+    n0,n1,n2 = n
+    if(n1>0):
+        if(n2>0):
+            indice=random.randint(1,2)
+            if indice==1:
+                file_test.write(datoc[0]+"\n")
+                n1-=1
+            else:
+                file_train.write(datoc[0]+"\n")
+                n2-=1
+        else:
+            indice=1
+            file_test.write(datoc[0]+"\n")
+            n1-=1
+    else:
+        indice=2
+        file_train.write(datoc[0]+"\n")
+        n2-=1
+    
+    return n0,n1,n2
+nb_scb=0
+nb_crd=0
+nb_sbs=0
+with open('data_file.csv', 'r') as fout:
+            reader = csv.reader(fout, delimiter=',')
+            for row in fout:
+                dato=row.split(',')
+                miocodice=code_extractor(dato[0])
+                if(miocodice=='scb'):
+                    nb_scb+=1
+                elif(miocodice=='crd'):
+                    nb_crd+=1
+                elif(miocodice=='sbs'):
+                    nb_sbs+=1 
+scb_nb=[]                    
+scb_nb= nb_scb, int(nb_scb/3),nb_scb-int(nb_scb/3)
+crd_nb=[]                    
+crd_nb= nb_crd, int(nb_crd/3),nb_crd-int(nb_crd/3) 
+sbs_nb=[]                    
+sbs_nb= nb_sbs, int(nb_sbs/3),nb_sbs-int(nb_sbs/3) 
+file_test=open('file_test.txt','w')
+file_train=open('file_train.txt','w')
+with open('data_file.csv', 'r') as fout:
+            reader = csv.reader(fout, delimiter=',')
+            for row in fout:
+                dato=row.split(',')
+                miocodice=code_extractor(dato[0])
+                if miocodice=='scb':
+                    scb_nb=scelta(dato,scb_nb)
+                elif miocodice=='sbs':  
+                    sbs_nb=scelta(dato,sbs_nb)
+                elif miocodice=='crd':  
+                    crd_nb=scelta(dato,crd_nb)  
+file_test.close()
+file_train.close()
+data_file =[] 
+file_train=open('file_train.txt','r')
+for line in file_train:     
+    codaction, game, time = line.split('_')
+    filename= line.split('\n')
+    for i in range(12):
+        src = os.path.join('data', codaction, game,filename[0]+'_%05d.jpg')%(i+1)
+        dest = os.path.join('dataset','train',game)
+        cdest= dest.split('/')
+        destf=os.path.join(dest,filename[0]+'_%05d.jpg')%(i+1)
+        if not bool(os.path.exists(os.path.join(dest))):
+                 os.makedirs(os.path.join(dest)) 
+        shutil.move(src,destf) 
+    data_file.append(['train', dest, filename[0], 12]) 
+file_test=open('file_test.txt','r')
+for line in file_test:   
+    codaction, game, time = line.split('_')
+    filename= line.split('\n')
+    for i in range(12):
+        src = os.path.join('data', codaction, game,filename[0]+'_%05d.jpg')%(i+1)
+        dest = os.path.join('dataset','test',game)        
+        destf=os.path.join(dest,filename[0]+'_%05d.jpg')%(i+1)
+        if not bool(os.path.exists(os.path.join(dest))):
+                 os.makedirs(os.path.join(dest)) 
+        shutil.move(src,destf)
+    data_file.append(['test', dest, filename[0], 12])            
+with open('traintest.csv', 'w') as fout:
+            writer = csv.writer(fout)
+            writer.writerows(data_file)         
