@@ -1,0 +1,43 @@
+import numpy as np
+import os 
+import os.path
+import csv
+import glob
+from keras.preprocessing import image
+
+class Generate_features():
+    def __init__(self):          
+        self.data_file = self.get_data()
+        n_line = len(self.data_file)
+        for i in range(n_line):
+            mainpath = (ff.data_file[i][0])
+            mypath = (ff.data_file[i][1]).split('/')
+            name_file = ff.data_file[i][2]            
+            path = os.path.join('features', mainpath, name_file+'-features')            
+            frames = self.get_frames(mypath, name_file)            
+            sequence = []
+            for sample in frames:                
+                features = self.extract(sample)              
+                sequence.append(features)
+            if not bool(os.path.exists(os.path.join('features', mainpath))):
+                 os.makedirs(os.path.join('features', mainpath))     
+            np.save(path, sequence)
+        
+    def get_data(self):        
+        with open(os.path.join('traintest.csv'), 'r') as fin:
+            reader = csv.reader(fin)
+            data = list(reader)
+        return data 
+    
+    def get_frames(self, mypath, name_file):
+        path = os.path.join(mypath[0], mypath[1], mypath[2])        
+        images = sorted(glob.glob(os.path.join(path, name_file + '*jpg')))
+        return images
+    
+    def extract(self, image_path):
+        img = image.load_img(image_path, target_size=(299, 299))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        return x
+    
+rr = Generate_features()    
