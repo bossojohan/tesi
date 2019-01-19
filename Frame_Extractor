@@ -1,0 +1,61 @@
+import os 
+import numpy as np
+import json
+from pprint import pprint
+import argparse
+from subprocess import call
+import csv
+import glob
+import os
+import os.path
+
+def code_action(action):
+    if (action == 'soccer-ball'):
+        codeact = 'scb'
+    elif (action == 'card'):
+        codeact = 'crd'
+    elif (action == 'substitution-in'):
+        codeact = 'sbs'
+    else:
+        codeact = 'ukn'
+    return codeact    
+
+def check_already_exist(dspath):
+    data , action , sample = dspath
+    return bool (os.path.exists(os.path.join(data, action, sample)))
+
+def timeExtractor():
+    time = action["gameTime"].split(' ')
+    finaltime= time[2]
+    return finaltime
+
+def get_nb_frames_for_video(dpath, codact, game, t):
+    generated_files = glob.glob(os.path.join(dpath, 
+                                            codact+'_'+game+'_'+t+'*.jpg'))
+    return len(generated_files)
+
+def check_already_extracted(dpath, codact, game, t):
+    return bool(os.path.exists(os.path.join(dpath,
+                               codact+'_'+game+'_'+t+'_0001.jpg')))
+
+data = json.load(open(os.path.join("commentaries.json")))
+data_file = []
+for game in (data["Championship"]):     
+        src = data["Championship"][game]["UrlLocal"] #ho la path del video       
+        myannotation = data["Championship"][game]['annotations'] #ho le mie annotazoni 
+        for action in myannotation:
+            codeact=code_action(action["label"]) 
+            t=timeExtractor()
+            #ragiona se devi allungare la path per creare una sotto cartella per ogni azione 
+            dpath=os.path.join('data',codeact,game) 
+            dspath=dpath.split('/')
+            if not check_already_exist(dspath):
+                 os.makedirs(os.path.join(dspath[0],dspath[1],dspath[2])) 
+            dest=os.path.join(dpath,codeact+'_'+game+'_'+t+'_%05d.jpg')            
+            if not check_already_extracted(dpath,codeact,game,t):                
+                call(["ffmpeg","-i",src,"-r", "3", "-ss", t+":00","-t", "00:00:04", dest])               
+            nb_frames = get_nb_frames_for_video(dpath,codeact,game,t)
+            data_file.append([codeact+'_'+game+'_'+t, nb_frames])            
+with open('data_file.csv', 'w') as fout:
+            writer = csv.writer(fout)
+            writer.writerows(data_file)       
