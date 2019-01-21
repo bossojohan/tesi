@@ -10,9 +10,9 @@ class Generate_features():
         self.data_file = self.get_data()
         n_line = len(self.data_file)
         for i in range(n_line):
-            mainpath = (ff.data_file[i][0])
-            mypath = (ff.data_file[i][1]).split('/')
-            name_file = ff.data_file[i][2]            
+            mainpath = (self.data_file[i][0])
+            mypath = (self.data_file[i][1]).split('/')
+            name_file = self.data_file[i][2]            
             path = os.path.join('features', mainpath, name_file+'-features')            
             frames = self.get_frames(mypath, name_file)            
             sequence = []
