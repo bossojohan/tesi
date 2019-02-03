@@ -1,0 +1,66 @@
+import os , os.path , csv , json , argparse , glob
+import numpy as np 
+from pprint import pprint 
+from subprocess import call 
+
+class Extractor_of_frame():
+    def __init__(self):
+        self.root_path='SoccerNet/SoccerNet-code/data'       
+    def code_action(self,action):
+        if (action == 'socer-ball'):
+            codeact = 'scb'
+        elif ((action == '*-card'):
+            codeact = 'crd'
+        elif (action == 'substitution-in'):
+            codeact = 'sbs'
+        else:
+            codeact = 'ukn'
+        return codeact     
+    def check_already_exist(self,path,m):        
+        action , sample = path
+        return bool ( os.path.exists(os.path.join( self.root_path,action, sample,m )))
+    
+    def timeExtractor(self,action):
+        time = action['gameTime'].split(' ')
+        finaltime = time[2]
+        game_section = time[0]
+        return game_section, finaltime 
+    
+    def get_nb_frames_for_video (self, dpath,m, codact, t):
+        generated_files = glob.glob(os.path.join(self.root_path,dpath,m,
+                                                codact+'_'+self.game+'_'+t+'*.jpg'))
+        return len( generated_files)
+    
+    def check_already_extracted(self, dpath, codact, t,act_dir):
+        return bool (os.path.exists(os.path.join(self.root_path,dpath,act_dir,
+                                                codact+'_'+self.game+'_'+t+'0001.jpg')))
+    
+    def extract_from_video(self, path, game_code):
+        self.game = game_code         
+        data = json.load(open(os.path.join(self.root_path, path)))
+        data_file = []
+        main_src = data["UrlLocal"]
+        myannotation = data['annotations']
+        for action in myannotation:             
+            codeact = self.code_action(action["label"])            
+            game_section, t = self.timeExtractor(action)
+            src = 'SoccerNet/'+main_src +game_section+'.mkv'
+            dpath = os.path.join('data' ,codeact,self.game,game_section+'_'+t)           
+            dspath = dpath.split('/')            
+            if not self.check_already_exist(root_path, dspath):
+                os.makedirs(os.path.join(root_path, dspath[0],dspath[1],dspath[2],dspath[3]))
+            dest = os.path.join(root_path,dspath[0], dspath[1],dspath[2] ,dspath[3],codeact+'_%05d.jpg')             
+            if not self.check_already_extracted(root_path, dpath):                    
+                call (["ffmpeg", "-i",src,"-r", "25" , "-ss", '00:'+t,"-t", "00:01:00",  dest])
+            nb_frames = self.get_nb_frames_for_video(root_path,dpath, act_dir,codeact, t)
+            data_file.append([codeact+'_'+'_'+t, nb_frames])
+        with open ('data_file.csv', 'w') as fout :
+            writer = csv.writer(fout)
+            writer.writerows(data_file)
+            
+with open(os.path.join('SoccerNet/SoccerNet-code/data','SoccerNet_V1.1_Labels.csv'))as main_root:
+    reader = csv.reader(main_root, delimiter = ',')
+    my_extractor = Extractor_of_frame()
+    for row in main_root:
+        labels_path, game_code, _ = row.split(',')
+        my_extractor.extract_from_video(labels_path,game_code)
