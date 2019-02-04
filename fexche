@@ -17,8 +17,8 @@ class Extractor_of_frame():
             codeact = 'ukn'
         return codeact     
     def check_already_exist(self,path):  #root_path/code_action/game_code/gamesection_time.jpeg      
-        code , game, action = path
-        return bool ( os.path.exists(os.path.join( self.root_path,code, game, action )))    
+        code , game, time = path
+        return bool ( os.path.exists(os.path.join( self.root_path,code, game, time )))    
     def timeExtractor(self,action):
         time = action['gameTime'].split(' ')
         finaltime = time[2]
@@ -44,11 +44,11 @@ class Extractor_of_frame():
             codeact = self.code_action(action["label"])            
             game_section, t = self.timeExtractor(action)
             src = 'SoccerNet/'+main_src +game_section+'.mkv'
-            dpath = os.path.join('data' ,codeact,self.game,game_section+'_'+t)           
+            dpath = os.path.join('data', codeact, self.game, game_section+'_'+t)           
             dspath = dpath.split('/')            
             if not self.check_already_exist(root_path, dspath):
                 os.makedirs(os.path.join(root_path, dspath[0],dspath[1],dspath[2],dspath[3]))
-            dest = os.path.join(root_path,dspath[0], dspath[1],dspath[2] ,dspath[3],codeact+'_%05d.jpg')             
+            dest = os.path.join(root_path,dspath[0], dspath[1],dspath[2] ,dspath[3],codeact+game_section+'_'+t+'_%05d.jpg')             
             if not self.check_already_extracted(root_path, dpath):                    
                 call (["ffmpeg", "-i",src,"-r", "25" , "-ss", '00:'+t,"-t", "00:01:00",  dest])
             nb_frames = self.get_nb_frames_for_video(root_path,dpath, act_dir,codeact, t)
