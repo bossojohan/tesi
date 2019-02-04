@@ -16,18 +16,17 @@ class Extractor_of_frame():
         else:
             codeact = 'ukn'
         return codeact     
-    def check_already_exist(self,path,m):        
-        action , sample = path
-        return bool ( os.path.exists(os.path.join( self.root_path,action, sample,m )))
-    
+    def check_already_exist(self,path):  #root_path/code_action/game_code/gamesection_time.jpeg      
+        code , game, action = path
+        return bool ( os.path.exists(os.path.join( self.root_path,code, game, action )))    
     def timeExtractor(self,action):
         time = action['gameTime'].split(' ')
         finaltime = time[2]
         game_section = time[0]
         return game_section, finaltime 
     
-    def get_nb_frames_for_video (self, dpath,m, codact, t):
-        generated_files = glob.glob(os.path.join(self.root_path,dpath,m,
+    def get_nb_frames_for_video (self, path):
+        generated_files = glob.glob(os.path.join(self.root_path,path,
                                                 codact+'_'+self.game+'_'+t+'*.jpg'))
         return len( generated_files)
     
